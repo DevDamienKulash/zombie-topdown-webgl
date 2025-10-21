@@ -20,4 +20,11 @@ public class Health : MonoBehaviour, IDamageable
         onHealthChanged?.Invoke(Current, maxHP);
         if (Current == 0) onDeath?.Invoke();
     }
+    public void SetMaxAndFill(int amount)
+{
+// Update max and refill to full, notifying UI once
+maxHP = amount;
+Current = amount;
+onHealthChanged?.Invoke(Current, maxHP);
+}
 }
