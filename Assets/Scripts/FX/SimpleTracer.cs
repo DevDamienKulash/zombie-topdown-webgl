@@ -1,13 +1,18 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class SimpleTracer : MonoBehaviour
+public class SimpleTracer : MonoBehaviour, IPoolable
 {
     [SerializeField] float defaultLifetime = 0.06f;
     [SerializeField] float defaultWidth = 0.03f;
 
     LineRenderer lr;
     float life;
+
+    // Pool owner (set by the pool or the shooter)
+    private TracerPool owner;
+
+    public void SetOwner(TracerPool pool) => owner = pool;
 
     void Awake()
     {
@@ -51,7 +56,25 @@ public class SimpleTracer : MonoBehaviour
         if (life <= 0f)
         {
             enabled = false;
-            gameObject.SetActive(false); // ready for pooling reuse
+            if (owner != null)
+            {
+                owner.Release(this); // return to pool
+            }
+            else
+            {
+                gameObject.SetActive(false); // fallback if no pool assigned
+            }
         }
+    }
+
+    // IPoolable hooks
+    public void OnSpawned()
+    {
+        enabled = true;
+    }
+
+    public void OnDespawned()
+    {
+        enabled = false;
     }
 }

@@ -8,6 +8,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float moveSpeed = 6f;
     [SerializeField] LayerMask groundMask; // assign to Ground layer in Inspector
     [SerializeField] Camera cam; // auto-grab if null
+    [SerializeField] Animator anim;
+    [SerializeField] float animDamp = 0.08f;
 
 
     Vector2 moveInput;
@@ -44,5 +46,10 @@ public class PlayerController : MonoBehaviour
                     transform.rotation = Quaternion.LookRotation(dir);
             }
         }
+         if (anim) {
+        var v = cc.velocity; // CharacterController velocity in m/s
+        float planar = new Vector2(v.x, v.z).magnitude; // 0 when idle, ~moveSpeed when running
+        anim.SetFloat("Speed", planar, animDamp, Time.deltaTime);
+    }
     }
 }

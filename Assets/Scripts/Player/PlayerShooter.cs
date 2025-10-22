@@ -1,76 +1,53 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-
 public class PlayerShooter : MonoBehaviour
 {
-    [SerializeField] Transform muzzle; // optional; fallback = player pos + up
+    [Header("Shooting")]
+    [SerializeField] Transform muzzle; 
     [SerializeField] float range = 50f;
-    [SerializeField] float fireRate = 8f; // shots per second
+    [SerializeField] float fireRate = 8f;
     [SerializeField] int damage = 20;
-    [SerializeField] LayerMask hitMask; // include Enemy layer (and props if desired)
-    [SerializeField] SimpleTracer tracerPrefab; // assign in Inspector
+    [SerializeField] LayerMask hitMask;
 
+    [Header("FX Pool")]
+    [SerializeField] TracerPool tracerPool;
 
     float nextFire;
     Camera cam;
 
-
     void Awake() { cam = Camera.main; }
-
 
     public void OnFire(InputValue value)
     {
         if (value.isPressed) TryFire();
     }
 
-
     void Update()
     {
         if (Mouse.current.leftButton.isPressed) TryFire();
     }
-
 
     void TryFire()
     {
         if (Time.time < nextFire) return;
         nextFire = Time.time + 1f / fireRate;
 
-
-        Vector3 origin = muzzle ? muzzle.position : transform.position + Vector3.up * 1f;
-        Vector3 dir = transform.forward; // player faces mouse already
-
+        Vector3 origin = muzzle ? muzzle.position : transform.position + Vector3.up;
+        Vector3 dir = transform.forward;
 
         Vector3 end = origin + dir * range;
         if (Physics.Raycast(origin, dir, out RaycastHit hit, range, hitMask))
         {
             end = hit.point;
             hit.collider.GetComponentInParent<IDamageable>()?.TakeDamage(damage);
-            // TODO: spawn damage number + brief hit flash on enemy later
         }
 
-
-        // Tracer (pooled by simple SetActive off when done)
-        if (tracerPrefab)
+        if (tracerPool != null)
         {
-            var tracer = GetOrSpawnTracer();
+            var tracer = tracerPool.Get();
+            tracer.SetOwner(tracerPool);
             tracer.Fire(origin, end);
         }
-    }
-
-
-    SimpleTracer GetOrSpawnTracer()
-    {
-        // Minimal pool: try to find inactive child; else instantiate
-        foreach (Transform child in transform)
-        {
-            var t = child.GetComponent<SimpleTracer>();
-            if (t && !t.gameObject.activeSelf)
-            {
-                t.gameObject.SetActive(true);
-                return t;
-            }
-        }
-        return Instantiate(tracerPrefab, transform);
     }
 }
